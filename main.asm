@@ -147,6 +147,32 @@ _send_handshake_to_X11:
 	pop rbp
 	ret
 
+_generate_next_id:
+
+	push rbp
+	mov rbp, rsp
+
+	;; Load id
+
+		mov eax, DWORD [_data.id]
+
+	;; Load base and mask id
+
+		mov ebx, DWORD [_data.id_base]
+		mov ecx, DWORD [_data.id_mask]
+
+	;; (id & id_mask) | id_base
+
+		and eax, ecx
+		or eax, ebx
+
+	;; Increment id
+
+		add DWORD [_data.id], 1
+
+	pop rbp
+	ret
+
 _start:
 	call _connect_to_X11
 	call _send_handshake_to_X11
