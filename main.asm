@@ -173,9 +173,81 @@ _generate_next_id:
 	pop rbp
 	ret
 
+_open_font:
+	push rbp
+	mov rbp, rsp	
+	sub rsp, 48
+
+	mov DWORD [rsp + 0*4], 0x2d 			; X11_OP_REQ_OPEN_FONT
+
+	call _generate_next_id
+	mov r8d, eax
+
+	mov DWORD [rsp + 1*4], eax  			; font Id
+	mov DWORD [rsp + 2*4], _data.font_len	; font name length
+
+	mov rsi, _data.font
+	lea rdi, [rsp + 3*4]
+	mov ecx, _data.font_len
+	cld
+	rep movsb
+
+	mov rax, 1
+	mov rdi, r12
+	lea rsi, [rsp]
+	mov rdx, 17
+	syscall
+
+	cmp rax, 17
+	jnz _exit_process
+
+	mov rax, 0
+
+	add rsp, 48
+	pop rbp
+	ret
+
+_create_graphical_context:
+	push rbp
+	mov rbp, rsp
+
+	sub rsp, 64
+
+	mov DWORD [rsp + 0*4], 0x37
+
+	call _generate_next_id
+	mov r9d, eax
+	mov DWORD [rsp + 1*4], r9d
+
+	call _generate_next_id
+	mov r10d, eax
+	mov DWORD [rsp + 2*4], r10d
+
+	mov DWORD [rsp + 3*4], 0x400c
+	mov DWORD [rsp + 4*4], 0x0000ffff
+	mov DWORD [rsp + 5*4], 0
+	mov DWORD [rsp + 6*4], r8d
+
+	mov rax, 1
+	mov rdi, r12
+	mov rsi, rsp
+	mov rdx, 28
+	syscall
+
+	cmp rax, 28
+	jnz _exit_process
+
+	mov rax, 0
+
+	add rsp, 64
+	pop rbp
+	ret
+
 _start:
 	call _connect_to_X11
 	call _send_handshake_to_X11
+	call _open_font
+	call _create_graphical_context
 
 _exit_process:
 	mov rdi, rax
@@ -200,4 +272,9 @@ _data:
 
 .root_visual_id:
 	dd 0
+
+.font:
+	db "fixed"
+
+.font_len = $ - .font
 
